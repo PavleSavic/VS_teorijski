@@ -1,0 +1,398 @@
+% !TEX encoding = UTF-8 Unicode
+
+\documentclass[a4paper]{article}
+
+\usepackage{color}
+\usepackage{url}
+\usepackage[T2A]{fontenc} % enable Cyrillic fonts
+\usepackage[utf8]{inputenc} % make weird characters work
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{diagbox}
+\usepackage[section]{placeins}
+\usetikzlibrary{arrows,shapes,automata,petri,positioning,calc}
+
+\usepackage[english,serbian]{babel}
+%\usepackage[english,serbianc]{babel} %ukljuciti babel sa ovim opcijama, umesto gornjim, ukoliko se koristi cirilica
+
+\usepackage[unicode]{hyperref}
+\hypersetup{colorlinks,citecolor=green,filecolor=green,linkcolor=blue,urlcolor=blue}
+
+%\newtheorem{primer}{Пример}[section] %ćirilični primer
+\newtheorem{primer}{Primer}[section]
+
+\usepackage{listings}
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+\definecolor{mymauve}{rgb}{0.58,0,0.82}
+
+\lstset{ 
+  backgroundcolor=\color{white},   % choose the background color; you must add \usepackage{color} or \usepackage{xcolor}; should come as last argument
+  basicstyle=\scriptsize\ttfamily,        % the size of the fonts that are used for the code
+  breakatwhitespace=false,         % sets if automatic breaks should only happen at whitespace
+  breaklines=true,                 % sets automatic line breaking
+  captionpos=b,                    % sets the caption-position to bottom
+  commentstyle=\color{mygreen},    % comment style
+  deletekeywords={...},            % if you want to delete keywords from the given language
+  escapeinside={\%*}{*)},          % if you want to add LaTeX within your code
+  extendedchars=true,              % lets you use non-ASCII characters; for 8-bits encodings only, does not work with UTF-8
+  firstnumber=1000,                % start line enumeration with line 1000
+  frame=single,	                   % adds a frame around the code
+  keepspaces=true,                 % keeps spaces in text, useful for keeping indentation of code (possibly needs columns=flexible)
+  keywordstyle=\color{blue},       % keyword style
+  language=Python,                 % the language of the code
+  morekeywords={*,...},            % if you want to add more keywords to the set
+  numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
+  numbersep=5pt,                   % how far the line-numbers are from the code
+  numberstyle=\tiny\color{mygray}, % the style that is used for the line-numbers
+  rulecolor=\color{black},         % if not set, the frame-color may be changed on line-breaks within not-black text (e.g. comments (green here))
+  showspaces=false,                % show spaces everywhere adding particular underscores; it overrides 'showstringspaces'
+  showstringspaces=false,          % underline spaces within strings only
+  showtabs=false,                  % show tabs within strings adding particular underscores
+  stepnumber=2,                    % the step between two line-numbers. If it's 1, each line will be numbered
+  stringstyle=\color{mymauve},     % string literal style
+  tabsize=2,	                   % sets default tabsize to 2 spaces
+  title=\lstname                   % show the filename of files included with \lstinputlisting; also try caption instead of title
+}
+
+\tikzset{
+    place/.style={
+        circle,
+        thick,
+        draw=black,
+        fill=gray!50,
+        minimum size=22mm,
+    },
+        state/.style={
+        circle,
+        thick,
+        draw=blue!75,
+        fill=blue!20,
+        minimum size=22mm,
+    },
+}
+
+
+\begin{document}
+
+\title{Dijagrami stanja i tabele stanja kroz primere\\ \small{Seminarski rad u okviru kursa\\Verifikacija softvera\\Matematički fakultet}}
+
+\author{Pavle Savić, 1075/2022\\ pavlesavic1389@gmail.com}
+\maketitle
+
+\abstract{
+Cena neispravnog softvera često je materijalno ogromna, a nekada može imati i fatalne posledice. Briga o kvalitetu softvera (eng. \textit{Quality Assurance}) i testiranje kao njen značajan deo stoga zauzimaju važno mesto u pogledu vremena, novca, napora i ljudskih resursa u procesu razvoja industrijskog softvera. Ove aktivnosti u današnje vreme, sa povećanjem konkurencije na tržištu i smanjene tolerancije korisnika na greške, dodatno dobijaju na važnosti. U testiranju softvera prisutne su različite vrste, načini i tehnike  kako bi se povećala sigurnost u ispravnost i kvalitet aplikacija. U ovom radu biće ukratko predstavljeni dijagrami stanja (eng. \textit{State-Transition Diagram}) i tabele stanja (eng. \textit{State-Transition Table}) i njihova primena u testiranju softvera, kao i modelovanje nekoliko primera sistema ovim tehnikama.
+}
+
+\tableofcontents
+
+\newpage
+
+\section{Uvod}
+\label{sec:uvod} Prikazivanje različitih stanja u kojima sistem funkcioniše i događaja koji utiču na promenu tog stanja jeste moćna tehnika za analizu, dizajn i testiranje softverskih sistema u kontekstu razvoja softvera. 
+
+\textbf{Dijagram stanja} (eng. \textit{State-Transition Diagram}) je dinamički dijagram koji vizuelno predstavlja stanja sistema i način njegove interakcije sa spoljašnjim svetom kroz događaje na koje sistem reaguje promenom stanja \cite{StateTestingExample}. Dijagram stanja je slična tehnika UML dijagramu stanja (eng. \textit{UML State Machine Diagram}) ali sa različitom notacijom. Osnovnu strukturu čine 4 tipa elemenata (slika \ref{fig:dijagram elementi}):
+
+\begin{itemize}
+    \item \textbf{Stanje} - vidljiv način ponašanja sistema, u svakom momentu sistem je samo u jednom od mogućih stanja  
+    \item \textbf{Prelaz} - dozvoljena promena iz jednog stanja sistema u drugo
+    \item \textbf{Događaj} - interni (npr. istek tajmera) ili eksterni, prouzrokuje prelaz 
+    \item \textbf{Akcija} - operacija sistema izazvana prelazom
+\end{itemize}
+
+\begin{figure} [!h]
+ \begin{tikzpicture}[node distance=4cm and 2cm,>=stealth',auto, every place/.style={draw}]
+ \hspace*{2.6cm}
+    \node [place] (Stanje 1) {Stanje 1};
+    \coordinate[node distance=2.2cm,left of=Stanje 1] (left-Stanje 1);
+    \coordinate[node distance=2.2cm,right of=Stanje 1] (right-Stanje 1);
+
+    \node [place] (Stanje 2) [right=of Stanje 1] {Stanje 2};
+    
+    \path[->] (Stanje 1) edge [bend left] node {Događaj/Akcija} (Stanje 2);
+ \end{tikzpicture}
+ \caption{Osnovni elementi dijagrama stanja}
+ \label{fig:dijagram elementi}
+\end{figure}
+
+ Kod složenijih sistema poželjno je da se nacrta više dijagrama stanja za različite objekte sistema. Dijagrami stanja su veoma korisni za opisivanje ponašanja pojedinačnih objekata u celom skupu slučajeva upotrebe koji utiču na te objekte a ne treba ih koristiti za opisivanje saradnje između objekata koja uzrokuje prelaze \cite{StateTesting}. Dijagram stanja koji prolazi kroz definisani životni ciklus objekta može da ima jedno ili više konačnih stanja. Ova stanja na dijagramu nemaju izlazne, već samo ulazne strelice. Početno stanje objekta se često posebno označava na dijagramu. 
+
+\textbf{Tabela stanja} (eng. \textit{State-Transition Table}) sistematično prikazuje sve moguće prelaze između stanja u obliku matrice. Poslovni analitičar može da koristi tabele stanja da osigura da su svi prelazi identifikovani analizom svake ćelije u matrici. Sva moguća stanja se pojavljuju u prvoj koloni sleva i u prvoj vrsti odozgo. Ćelije pokazuju da li je prelaz iz kolone u vrstu validan i ako jeste prikazuje događaj koji izaziva taj prelaz i eventualnu akciju sistema. Format dijagrama pomaže zainteresovanim stranama da vizualizuju moguće sekvence prelaza, a format tabele pomaže da se osigura da sistem u svim situacijama ima predefinisano ponašanje. \cite{ModelingSystemStates} 
+
+
+\subsection{Testiranje zasnovano na dijagramu i tabeli stanja}
+\label{sec:testiranje}
+Testiranje promene stanja (eng. \textit{State Transition Testing}) je tehnika testiranja crne kutije (eng. \textit{Black Box Testing}) koja pomaže da se utvrdi kako promene ulaznih parametara izazivaju promene stanja ili promene izlaza u aplikaciji koja se testira. Ova tehnika testiranja pomaže da se analizira ponašanje aplikacije za različite ulazne parametre. Testeri mogu da obezbede pozitivne i negativne ulazne vrednosti testa i zabeleže ponašanje sistema. Svaki sistem koji reaguje na različit način za isti ulaz, u zavisnosti od toga šta se ranije dešava (u kom se stanju trenutno nalazi) može se modelovati konačnim automatom (eng. \textit{Finite-state machine}). Osnovno pravilo konzistentnosti je da se sistem u proizvoljnom stanju ponaša isto bez obzira kojim putem se do tog stanja došlo.
+
+Ova tehnika testiranja je korisna kada je potrebno da se testira sistem u odnosu na konačni skup ulaznih vrednosti. Mogu se testirati različiti sistemski prelazi za sekvencu događaja, npr. unosi ulaznih parametara preko interfejsa  koji čine celovitu proceduru. Često se koristi za testiranje aplikacija u realnom vremenu. Sa druge strane nije pogodna kada je potrebno testirati različite funkcionalnosti aplikacije u kontekstu istraživačkog testiranja (eng. \textit{Exploratory Testing}), ako sistem nema konačan broj ulaza i izlaza, kao ni za sisteme koji imaju eksponencijalni rast ulaznih parametara.
+Takođe ova tehnika se ne koristi kada nije potrebno ispitati ponašanje sistema za sekvencu ulaza.
+Tester uvek treba da ima jasnu viziju o ulazima i očekivanim izlazima iz sistema. \cite{StateTestingExample} \cite{SoftwareTesting}
+
+Dijagrami stanja olakšavaju rano testiranje jer testeri mogu izvesti test slučajeve njegovim obilaskom i pokriti sve dozvoljene prelazne putanje i verifikovati da se nedozvoljene putanje ne mogu desiti. Temeljnost našeg testiranja oslanja se na kompletan model. Stoga, propuštena stanja ili prelazi mogu dovesti do toga da deo sistema ostane nepokriven testovima, ostavljajući potencijalne nedostatke neotkrivenim. Pri pravljenju skupa test slučajeva mogu se zahtevati različiti nivoi pokrivenosti. Za kompleksne sisteme lako dolazi do eksplozije broja stanja pa je važno napraviti kompromis između pokrivenosti i količine testova \cite{StateTransition}. Primer dobrog kompomisa je skup testova koji omogućava da se svaki prelaz ispita bar jednom. Takođe, može se zahtevati da se svako stanje ili svaka putanja kroz dijagram obiđu bar jednom. Preglednost tabela stanja može nam pomoći da osiguramo da u skupu test slučajeva ispitujeme sve kombinacije stanja i događaja koji iz tog stanja izazivaju validan prelaz \cite{ModelingSystemStates}.
+
+\section{Primeri}
+\label{sec:primeri}
+U nastavku rada biće predstavljeno nekoliko primera modelovanja jednostavnih sistema dijagramima i tabelama stanja.
+
+\subsection{Sistem nabavke \cite{ModelingSystemStates}}
+\label{subsec:primer1}
+
+Kao ilustracija, u ovom primeru biće razmotren sistem koji upravlja zalihama hemikalija u istraživačkim laboratorijama velike kompanije. Ovaj sistem omogućava naučnicima da traže nove hemikalije, prate lokaciju i status pojedinačnih hemijskih kontejnera, pruža zdravstvene i bezbednosne informacije i tako dalje.
+Kada korisnik pošalje zahtev za novu hemikaliju, sistem može ispuniti zahtev ili iz inventara skladišta hemikalija ili slanjem porudžbine komercijalnom prodavcu hemikalija. Prodavac takođe može staviti porudžbinu na čekanje u slučaju da trenutno nema hemikaliju na raspolaganju i o tome obavestiti kupca.  Svaki zahtev će proći kroz niz stanja između vremena kada je kreiran i trenutka kada je ispunjen ili otkazan – dva završna stanja. Dijagram i tabela stanja zahteva prikazani su na slici \ref{fig:dijagram zahtev} i tabeli \ref{table:tabela zahtev}.
+
+
+\begin{figure} [!htb] 
+\resizebox{470pt}{!} {
+\begin{tikzpicture}[node distance=4cm and 2cm,>=stealth',auto, every place/.style={circle, draw}]
+\hspace*{-0.5cm} 
+    \node [place] (U pripremi) {U pripremi};
+    \coordinate[node distance=1.8cm,left of=U pripremi] (left-U pripremi);
+    \coordinate[node distance=1.8cm,right of=U pripremi] (right-U pripremi);
+
+    \draw[->, thick] (left-U pripremi) -- (U pripremi);
+
+    \node [place] (Odložen) [node distance=3.0cm, right=of U pripremi] {Odložen};
+    \node [place] (Prihvaćen) [node distance=2.0cm,below=of U pripremi] {Prihvaćen};
+    \node [place, align=center] (Predat prodavcu) [node distance=2.0cm,below=of Prihvaćen] {Predat\\prodavcu};
+    \node [place] (Na čekanju) [node distance=2.0cm,below=of Predat prodavcu] {Na čekanju};
+    \node [state,initial text=,accepting by double] (Otkazan) [right=of Na čekanju]
+    {Otkazan};
+    \node [state,initial text=,accepting by double] (Ispunjen) [left=of Na čekanju]
+    {Ispunjen};
+
+    \path[->] (U pripremi) edge [bend left] node {Čuvanje nedovršenog} (Odložen);
+    \path[->] (Odložen) edge [bend left] node {Očitavanje nedovršenog} (U pripremi);
+    \path[->] (U pripremi) edge node {Prihvatanje} (Prihvaćen);
+    \path[->] (Prihvaćen) edge node {Slanje} (Predat prodavcu);
+    \path[->] (Predat prodavcu) edge node {Nedostupna hemikalija} (Na čekanju);
+    \path[->] (Na čekanju) edge node {Otkazivanje} (Otkazan);
+    \path[->] (Na čekanju) edge node {Opsluživanje} (Ispunjen);
+    \path[->] (Predat prodavcu) edge [bend left=45] node {Otkazivanje} (Otkazan);
+    \path[->] (Predat prodavcu) edge [bend right=45] node {Opsluživanje} (Ispunjen);
+    \path[->] (Prihvaćen) edge [bend left=60] node {Otkazivanje} (Otkazan);
+    \path[->] (Prihvaćen) edge [bend right=60] node {Opsluživanje} (Ispunjen);
+    \path[->] (Odložen) edge [bend left=70] node {Otkazivanje} (Otkazan);
+
+\end{tikzpicture}
+}
+\caption{Dijagram stanja zahteva za \ref{subsec:primer1}}
+\label{fig:dijagram zahtev}
+\end{figure}
+
+
+\begin{table}[!htb]
+    \centering
+    \hspace*{-4.2cm}
+    \resizebox{590pt}{!} {
+    \begin{tabular}{|l|l|l|l|l|l|l|l|}
+        \hline
+        \diagbox[innerwidth = 3cm, height = 4ex]{Iz stanja}{U stanje} & \textbf{U pripremi} & \textbf{Odložen} & \textbf{Prihvaćen} & \textbf{Predat} & \textbf{Na čekanju} & \textbf{Ispunjen} & \textbf{Otkazan} \\ \hline
+        \textbf{U pripremi} & / & Čuvanje nedovršenog & Prihvatanje & X & X & X & X \\ \hline
+        \textbf{Odložen} & Očitavanje nedovršenog & / & X & X & X & X & Otkazivanje \\ \hline
+        \textbf{Prihvaćen} & X & X & / & Slanje & X & Opsluživanje & Otkazivanje \\ \hline
+        \textbf{Predat} & X & X & X & / & Nedostupna hemikalija & Opsluživanje & Otkazivanje \\ \hline
+        \textbf{Na čekanju} & X & X & X & X & / & Opsluživanje & Otkazivanje \\ \hline
+        \textbf{Ispunjen} & X & X & X & X & X & / & X \\ \hline
+        \textbf{Otkazan} & X & X & X & X & X & X & / \\ \hline
+    \end{tabular}
+    }
+    \caption{Tabela stanja zahteva za \ref{subsec:primer1}}
+    \label{table:tabela zahtev}
+\end{table}
+
+\newpage
+    
+\subsection{Upis kandidata na fakultet}
+\label{subsec:primer2}
+U ovom primeru prikazana su stanja kandidata u sistemu kroz proceduru upisa na fakultet. Da bi kandidat bio prijavljen mora ispuniti određene uslove vezane za prethodno školovanje i uz prijavu priložiti traženu dokumentaciju. Nakon toga u zavisnosti od rezultata testiranja može završiti u jednom od 3 završna stanja - odbijen, upisan kao budžetski, upisan kao samofinansirajući student. Dijagram i tabela stanja kandidata prikazani su na slici \ref{fig:dijagram kandidat} i tabeli \ref{table:tabela kandidat}.  
+
+\begin{figure} [!htb]
+\resizebox{560pt}{!} {
+\begin{tikzpicture}[node distance=2.5cm and 2cm,>=stealth',auto, every place/.style={circle, draw}]
+\hspace*{-4.2cm}
+    \node [place, align=center] (Podneo prijavu) {Podneo\\prijavu};
+    \coordinate[node distance=2.0cm,left of=Podneo prijavu] (left-Podneo prijavu);
+    \coordinate[node distance=2.0cm,right of=Podneo prijavu] (right-Podneo prijavu);
+
+    \draw[->, thick] (left-Podneo prijavu) -- (Podneo prijavu);
+
+    \node [place] (Prijavljen) [node distance=3.4cm,right=of Podneo prijavu] {Prijavljen};
+    \node [state,initial text=,accepting by double] (Odbijen) [below=of Podneo prijavu]
+    {Odbijen};
+    \node [place, align=center] (Na testiranju) [node distance=3.0cm,right=of Prijavljen] {Na\\testiranju};
+    \node [place] (Rangiran) [node distance=3.5cm,right=of Na testiranju] {Rangiran};
+    \node [state,initial text=,accepting by double] (Budžet) [right=of Rangiran]
+    {Budžet};
+    \node [state,initial text=,accepting by double, align=center] (Samofinansiranje) [below=of Rangiran]
+    {Samo-\\finansiranje};
+
+  
+    \path[->] (Podneo prijavu) edge node {Ispunio uslove prijave} (Prijavljen);
+    \path[->] (Podneo prijavu) edge node {Nije ispunio uslove prijave} (Odbijen);
+    \path[->] (Prijavljen) edge node {Sastavljen spisak} (Na testiranju);
+    \path[->] (Na testiranju) edge node {Napravljena rang lista} (Rangiran);
+    \path[->] (Rangiran) edge node {Nije u prvih 200} (Odbijen);
+    \path[->] (Rangiran) edge node {U prvih 50} (Budžet);
+    \path[->] (Rangiran) edge node {Rang 50-200} (Samofinansiranje);
+\end{tikzpicture}
+}
+\caption{Dijagram stanja kandidata za \ref{subsec:primer2}} 
+\label{fig:dijagram kandidat}
+\end{figure}
+
+
+\begin{table}[!htb]
+\hspace*{-4.2cm}
+    \centering
+    \resizebox{590pt}{!} {
+    \begin{tabular}{|l|l|l|l|l|l|l|l|}
+        \hline
+        \diagbox[innerwidth = 3cm, height = 4ex]{Iz stanja}{U stanje} & \textbf{Podneo prijavu} & \textbf{Prijavljen} & \textbf{Na testiranju} & \textbf{Rangiran} & \textbf{Budžet} & \textbf{Samofinansiranje} & \textbf{Odbijen} \\ \hline
+        \textbf{Podneo prijavu} & / & Ispunjeni uslovi & X & X & X & X & Neispunjeni uslovi \\ \hline
+        \textbf{Prijavljen} & X & / & Sastavljen spisak & X & X & X & X \\ \hline
+        \textbf{Na testiranju} & X & X & / & Napravljena rang lista & X & X & X \\ \hline
+        \textbf{Rangiran} & X & X & X & / & U prvih 50 & Rang 50-200 & Nije u prvih 200 \\ \hline
+        \textbf{Budžet} & X & X & X & X & / & X & X \\ \hline
+        \textbf{Samofinansiranje} & X & X & X & X & X & / & X \\ \hline
+        \textbf{Odbijen} & X & X & X & X & X & X & / \\ \hline
+    \end{tabular}
+    }
+    \caption{Tabela stanja kandidata za \ref{subsec:primer2}}
+    \label{table:tabela kandidat}
+\end{table}
+
+
+\subsection{Servis računara}
+\label{subsec:primer3}
+U ovom primeru prikazana su stanja računara u sistemu servisa računara. Nakon što se otvori radni nalog dijagnostifikuju se potencijalne neispravnosti računara. Potom se defekti uklanjaju sve dok se ne utvrdi da računar ispravno radi ili da servis ne može otkloniti problem. U oba slučaja radni nalog se zatvara i računar je u završnom stanju - vraćen vlasniku. Dijagram i tabela stanja računara prikazani su na slici \ref{fig:dijagram računar} i tabeli \ref{table:tabela računar} \footnote{X oznaka u ćeliji tabela stanja predstavlja nevalidan prelaz}.
+
+\begin{figure} [!htb]
+\resizebox{500pt}{!} {
+\begin{tikzpicture}[node distance=2.5cm and 2cm,>=stealth',auto, every place/.style={circle, draw}]
+\hspace*{-2.0cm}
+    \node [place] (Primljen) {Primljen};
+    \coordinate[node distance=2.0cm,left of=Primljen] (left-Primljen);
+    \coordinate[node distance=2.0cm,right of=Primljen] (right-Primljen);
+
+    \draw[->, thick] (left-Primljen) -- (Primljen);
+
+    \node [place] (Na proveri) [node distance=3.2cm,right=of Primljen] {Na proveri};
+    \node [place] (Neispravan) [node distance=2.5cm,below left=of Na proveri] {Neispravan};
+    \node [place] (Ispravan) [node distance=2.5cm,below right=of Na proveri] {Ispravan};
+    \node [place] (Na popravci) [node distance=2.5cm,below=of Neispravan] {Na popravci};
+    \node [state,initial text=,accepting by double,align=center] (Vraćen vlasniku) [node distance=2.5cm,below=of Ispravan] {Vraćen\\vlasniku};
+
+    \path[->] (Primljen) edge node {Otvaranje naloga} (Na proveri);
+    \path[->] (Na proveri) edge node {Ne prolazi testove} (Neispravan);
+    \path[->] (Na proveri) edge node {Prolazi testove} (Ispravan);
+    \path[->] (Neispravan) edge [bend right=80] node {Dostavljanje serviseru} (Na popravci);
+    \path[->] (Ispravan) edge [bend left=80] node {Zatvaranje naloga} (Vraćen vlasniku);
+    \path[->] (Neispravan) edge [bend right=30] node {Zatvaranje naloga} (Vraćen vlasniku);
+    \path[->] (Na popravci) edge [bend right] node {Servisiranje} (Na proveri);
+    
+\end{tikzpicture}
+}
+\caption{Dijagram stanja računara za \ref{subsec:primer3}}
+\label{fig:dijagram računar}
+\end{figure}
+
+
+\begin{table}[!htb]
+    \centering
+    \resizebox{470pt}{!} {
+    \hspace*{-4.5cm}
+    \begin{tabular}{|l|l|l|l|l|l|l|l|}
+        \hline
+        \diagbox[innerwidth = 3cm, height = 4ex]{Iz stanja}{U stanje} & \textbf{Primljen} & \textbf{Na proveri} & \textbf{Neispravan} & \textbf{Ispravan} & \textbf{Na popravci} & \textbf{Vraćen vlasniku} \\ \hline
+        \textbf{Primljen} & / & Otvaranje naloga & X & X & X & X \\ \hline
+        \textbf{Na proveri} & X & / & Ne prolazi testove & Prolazi testove & X & X \\ \hline
+        \textbf {Neispravan} & X & X & / & X & Dostavljanje serviseru & Zatvaranje naloga  \\ \hline
+        \textbf{Ispravan} & X & X & X & / & X & Zatvaranje naloga  \\ \hline
+        \textbf{Na popravci} & X & Servisiranje & X & X & / & X \\ \hline
+        \textbf{Vraćen vlasniku} & X & X & X & X & X & / \\ \hline
+    \end{tabular}
+    }
+    \caption{Tabela stanja računara za \ref{subsec:primer3}}
+    \label{table:tabela računar}
+\end{table}
+
+
+\newpage
+
+\subsection{Prikaz rada bankomata \cite{StateTransition}}
+\label{subsec:primer4}
+U ovom primeru predstavljen je princip rada i stanja kroz koja bankomat prolazi kada klijent obavlja transakciju. Nakon što klijent ubaci debitnu ili kreditnu karticu u čitač kartica bankomata i kartica se uspešno pročita, bankomat traži unos PIN-a. U slučaju unosa ispravnog PIN-a klijentu se omogućava da izvršava 
+željene transakcije. Klijent ne može da izvrši transakciju za koju ne ispunjava uslove (npr. podizanje gotovine u iznosu većem od tekućeg stanja na računu). Sistem ima jedno završno stanje - kartica se vraća klijentu. Dijagram i tabela stanja bankomata prikazani su na slici \ref{fig:dijagram bankomat} i tabeli \ref{table:tabela bankomat}.  
+
+
+\begin{figure} [!htb]
+\resizebox{480pt}{!} {
+\begin{tikzpicture}[node distance=2.5cm and 2cm,>=stealth',auto, every place/.style={circle, draw}]
+    \hspace*{-1.5cm}
+    \node [place, align=center] (Čeka karticu) {Čeka\\karticu};
+    \coordinate[node distance=2.0cm,left of=Čeka karticu] (left-Čeka karticu);
+    \coordinate[node distance=2.0cm,right of=Čeka karticu] (right-Čeka karticu);
+
+    \draw[->, thick] (left-Čeka karticu) -- (Čeka karticu);
+
+    \node [place, align=center] (Zahteva PIN) [node distance=2.0cm,below=of Čeka karticu] {Zahteva\\PIN};
+    \node [place, align=center] (Dozvoljen pristup) [node distance=2.0cm,below=of Zahteva PIN] {Dozvoljen\\pristup};
+    \node [place, align=center] (Obrada transakcije) [node distance=2.0cm,below=of Dozvoljen pristup] {Obrada\\transakcije};
+    \node[place, align=center] (Uspešna transakcija) [node distance=2.8cm,left=of Obrada transakcije] {Uspešna\\transakcija};
+    \node[place, align=center] (Neuspešna transakcija) [node distance=2.8cm,right=of Obrada transakcije] {Neuspešna\\transakcija};
+    \node[state,initial text=,accepting by double, align=center] (Vraćena kartica) [node distance=2.8cm,right=of Neuspešna transakcija] {Vraćena\\kartica};
+     
+    \path[->] (Čeka karticu) edge node {Ubacivanje kartice} (Zahteva PIN);
+    \path[->] (Zahteva PIN) edge node {Ispravan PIN} (Dozvoljen pristup);
+    \path[->] (Dozvoljen pristup) edge node {Odabir transakcije} (Obrada transakcije);
+    \path[->] (Obrada transakcije) edge node {Ispunjeni uslovi} (Uspešna transakcija);
+    \path[->] (Obrada transakcije) edge node {Neispunjeni uslovi} (Neuspešna transakcija);
+    \path[->] (Uspešna transakcija) edge [bend left] node {Izvođenje naredne} (Dozvoljen pristup);
+    \path[->] (Neuspešna transakcija) edge [bend right] node {Pokušati ponovo} (Dozvoljen pristup);
+    \path[->] (Uspešna transakcija) edge [bend right] node {Završetak} (Vraćena kartica);
+    \path[->] (Neuspešna transakcija) edge node {Završetak} (Vraćena kartica);
+    \path[->] (Dozvoljen pristup) edge [bend left] node {Otkazivanje transakcije} (Vraćena kartica);
+    \path[->] (Zahteva PIN) edge [bend left=60] node {Neispravan PIN} (Vraćena kartica);
+    
+\end{tikzpicture}
+}
+\caption{Dijagram stanja bankomata za \ref{subsec:primer4}} 
+\label{fig:dijagram bankomat}
+\end{figure}
+
+\begin{table}[!htb]
+\hspace*{-4.5cm}
+    \centering
+    \resizebox{595pt}{!} {
+    \begin{tabular}{|l|l|l|l|l|l|l|l|}
+        \hline
+        \diagbox[innerwidth = 3cm, height = 4ex]{Iz stanja}{U stanje} & \textbf{Čeka karticu} & \textbf{Zahteva PIN} & \textbf{Dozvoljen pristup} & \textbf{Obrada} & \textbf{Uspešna} & \textbf{Neuspešna} & \textbf{Vraćena kartica} \\ \hline
+        \textbf{Čeka karticu} & / & Ubačena kartica & X & X & X & X & X \\ \hline
+        \textbf{Zahteva PIN} & X & / & Ispravan PIN & X & X & X & Neispravan PIN \\ \hline
+        \textbf{Dozvoljen pristup} & X & X & / & Odabir transakcije & X & X & Otkazivanje transakcije \\ \hline
+        \textbf{Obrada} & X & X & X & / & Ispunjeni uslovi & Neispunjeni uslovi & X \\ \hline
+        \textbf{Uspešna} & X & X & Izvođenje naredne & X & / & X & Završetak \\ \hline
+        \textbf{Neuspešna} & X & X & Pokušati ponovo & X & X & / & Završetak \\ \hline
+        \textbf{Vraćena kartica} & X & X & X & X & X & X & / \\ \hline
+    \end{tabular}
+    }
+    \caption{Tabela stanja bankomata za \ref{subsec:primer4}}   
+    \label{table:tabela bankomat}
+\end{table}
+
+
+\section{Zaključak}
+\label{sec:zakljucak}
+
+Testiranje zasnovano na dijagramu stanja je značajna tehnika testiranja crne kutije (eng. \textit{black box testing}), posebno za sisteme gde redosled događaja ili unosa ima veliki uticaj na to kako se program ponaša. Pomaže nam da  razumevanjem stanja, događaja i akcija sistema izvedemo smislene test slučajeve. Pažljiva integracija ove tehnike u proces testiranja može značajno doprineti u proizvodnji visokokvalitetnih softverskih sistema koji su funkcionalni, pouzdani i stabilni.
+
+Ipak, treba da budemo svesni njegovih ograničenja i kako bismo obezbedili da naša strategija testiranja bude sveobuhvatna i efikasna često je poželjno kombinovati ovu tehniku sa drugim tehnikama testiranja crne kutije (eng. \textit{Black Box Testing}), kao što su testiranje pomoću klasa ekvivalencije (eng. \textit{Equivalence Class Testing}), njemu srodno testiranje graničnih vrednosti (eng. \textit{Boundary Value Testing}) ili testiranje pomoću tabele odlučivanja (eng. \textit{Decision Table Testing}). Ovo ne umanjuje značaj dijagrama stanja u procesu verifikacije softvera i poznavanje ove tehnike važna je veština kojom bi jedan tester trebalo da ovlada.
+
+
+\addcontentsline{toc}{section}{Literatura}
+\appendix
+\bibliography{seminarski} 
+\bibliographystyle{plain}
+
+
+\end{document}
